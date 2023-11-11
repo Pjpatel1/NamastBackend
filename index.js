@@ -64,20 +64,18 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
         return res.status(400).json({ error: 'User with this email already exists.' });
       }
       //Create a new user document in mongoDB
-      const newUser =  new Usermodel({
+      const newUser = new Usermodel({
         FirstName,
         LastName,
         Email,
         Password: hashedPassword,
-        
       });
+  
       await newUser.save();
-      res.json({message:"User registered successfully"});
-    }
-    catch(error)
-    {
-      console.log('Error During Registration')
-      res.status(500).json({error: error.message});
+      res.json({ message: "User registered successfully" });
+    } catch (error) {
+      console.error('Error during registration:', error);
+      res.status(500).json({ error: 'Internal server error during registration.' });
     }
   });
 
@@ -207,7 +205,7 @@ router.delete('/remove-from-cart/:userId/:productId', async(req,res)=>{
     }
 });
 
-app.get('/',async(req,res)=>{
+app.get('/register',async(req,res)=>{
     console.log("server is ready")
   })
   const port = process.env.PORT || 3001; // Use the provided port or a default (e.g., 3001)

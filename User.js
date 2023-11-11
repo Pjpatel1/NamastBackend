@@ -17,12 +17,7 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true
       },
-      Verificationtoken:
-      {
-        type: String,
-        require: false,
-        unique: true,
-      }
+     
 })
 const Usermodel =  mongoose.model("User", UserSchema)
 module.exports = Usermodel
