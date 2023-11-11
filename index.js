@@ -55,10 +55,7 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
 
   app.post('/register',async(req,res) => {
       const {FirstName, LastName, Email, Password} = req.body;
-      function generateVerificationToken() {
-        return uuidv4(); // Generate a version 4 UUID (random string)
-      }
-      const verificationToken = generateVerificationToken();
+      
       try{
       const hashedPassword = await bcrypt.hash(Password,10);
       //Chaecking for Existing user
@@ -72,7 +69,7 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
         LastName,
         Email,
         Password: hashedPassword,
-        verificationToken,
+        
       });
       await newUser.save();
       res.json({message:"User registered successfully"});
