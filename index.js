@@ -15,7 +15,7 @@ app.use(cors())
 app.use(express.json())
 app.use('/cart', router);
 // mongoose.connect("mongodb+srv://Namaste:ram123@clusternamaste.iplr4cq.mongodb.net/")
-const url = "mongodb+srv://Namaste:ram123@clusternamaste.iplr4cq.mongodb.net/Namaste"
+const url = "mongodb+srv://Ram:ram12345678@cluster0.fh8ns3a.mongodb.net/?retryWrites=true&w=majority";
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log("Connected to MongoDB!");
@@ -193,21 +193,66 @@ router.get('/get-cart/:userId',async(req,res)=>{
     res.status(500).json({error:'Internal server Error'});
   }
 });
+
+
+
 //remove from cart
-router.delete('/remove-from-cart/:userId/:productId', async(req,res)=>{
-    try{
-        const userId = req.params.userId;
-        const productId = req.params.productId;
+router.delete('/remove-from-cart/:userId/:cartItemId', async (req, res) => {
+  const userId = req.params.userId;
+  const cartItemId = req.params.cartItemId;
+  const newQuantity = req.body.newQuantity;
+  
+  try {
+    // Find the cart item by userId and cartItemId
+    const cartItem = await Cart.findOne({ userId, _id: cartItemId });
+
+    if (!cartItem) {
+      return res.status(404).json({ error: 'Cart item not found.' });
     }
-    catch(error){
-        console.error(error);
-        res.status(500).json({error:'Internal server error'});
+
+    // Check if the new quantity is greater than 1
+    if (newQuantity > 1) {
+      // Decrement the quantity by the specified amount
+      cartItem.quantity -= newQuantity;
+    } else if (cartItem.quantity === 1) {
+      // If the current quantity is 1, delete the whole product
+      await Cart.deleteOne({ userId, _id: cartItemId });
+      return res.json({ message: 'Cart item removed successfully.' });
+    } else {
+      // Decrement the quantity by 1
+      cartItem.quantity -= 1;
     }
+
+    // Ensure the quantity is not negative
+    cartItem.quantity = Math.max(0, cartItem.quantity);
+
+    // Update the totalAmount based on the new quantity
+    cartItem.totalAmount = cartItem.quantity * itemPrice;
+    // Save the updated cart item
+    await cartItem.save();
+
+    res.json({ message: 'Cart item removed successfully.' });
+  } catch (error) {
+    console.error('Error removing product from cart:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
+
 
 app.get('/register',async(req,res)=>{
     console.log("server is ready")
   })
+  app.get('/signin',async(req,res)=>{
+    console.log("Signin is ready")
+  })
+  app.get('/cart/add-to-cart',async(req,res)=>{
+  console.log("add to cart is ready")
+  })
+  app.get('/remove-from-cart',async(req,res)=>
+  {
+    console.log("remove from cart is working");
+  })
+
   const port = process.env.PORT || 3001; // Use the provided port or a default (e.g., 3001)
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
