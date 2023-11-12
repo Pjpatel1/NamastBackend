@@ -15,7 +15,7 @@ app.use(cors())
 app.use(express.json())
 app.use('/cart', router);
 // mongoose.connect("mongodb+srv://Namaste:ram123@clusternamaste.iplr4cq.mongodb.net/")
-const url = "mongodb+srv://Ram:ram12345678@cluster0.fh8ns3a.mongodb.net/?retryWrites=true&w=majority";
+const url = "mongodb+srv://Ram:ram12345678@cluster0.fh8ns3a.mongodb.net/";
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log("Connected to MongoDB!");
