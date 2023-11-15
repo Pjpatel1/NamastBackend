@@ -6,10 +6,26 @@ const cors = require ('cors')
 const ProductModel = require('./Products')
 const Usermodel = require('./User');
 const app = express();
+
 const router = express.Router();
 const crypto = require('crypto');
 const Cart = require('./Cart');
-const path = require('path')
+const path = require('path');
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5 MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Check file type
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  },
+}); // You can adjust this storage method based on your requirements
 app.use(express.static(path.join(__dirname+"/public")))
 app.use(cors())
 app.use(express.json())
@@ -238,6 +254,72 @@ router.delete('/remove-from-cart/:userId/:cartItemId', async (req, res) => {
   }
 });
 
+
+// Route to handle product creation
+app.post('/add/product', upload.fields([
+  { name: 'ProductImage1', maxCount: 1 },
+  { name: 'ProductImage2', maxCount: 1 },
+  { name: 'ProductImage3', maxCount: 1 },
+]), async (req, res) => {
+  try {
+    const {
+      Name,
+      Price,
+      Description,
+      Quantity,
+      Category,
+      Stock,
+      Brand,
+      ProductImage1,
+      ProductImage2,
+      ProductImage3,
+      ProductImage1Url,
+      ProductImage2Url,
+      ProductImage3Url,
+    } = req.body;
+
+    const productData = {
+      Name,
+      Price,
+      Description,
+      Quantity,
+      Category,
+      Stock,
+      Brand,
+      ProductImage1: req.files['ProductImage1'] ? req.files['ProductImage1'][0].buffer.toString('base64') : ProductImage1Url,
+      ProductImage2: req.files['ProductImage2'] ? req.files['ProductImage2'][0].buffer.toString('base64') : ProductImage2Url,
+      ProductImage3: req.files['ProductImage3'] ? req.files['ProductImage3'][0].buffer.toString('base64') : ProductImage3Url,
+    };
+
+    const newProduct = await ProductModel.create(productData);
+    res.status(201).json(newProduct);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+//REmove product from the Database
+app.delete('/remove/product/:id',async(req,res)=>{
+  try{
+    const productId = req.params.id;
+
+    const existingProducts = await ProductModel.findById(productId);
+    if (!existingProducts) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    await existingProducts.deleteOne();
+
+    res.status(200).json({ message: 'Product removed successfully' });
+
+
+  }
+  catch(error)
+  {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
+  }
+})
 
 app.get('/register',async(req,res)=>{
     console.log("server is ready")
