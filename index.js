@@ -51,7 +51,7 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
 
 
 
-  // This below code is for getting Product from Database
+  // This below code is for getting all Product from Database
   app.get('/getProducts', async (req, res) => {
     try {
       const products = await ProductModel.find();
@@ -65,6 +65,24 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
       res.status(500).json({ error: err.message });
     }
   });
+  //This code will send categorised products.
+  app.get('/getProductsByCategory/:category', async (req, res) => {
+    const category = req.params.category;
+  
+    try {
+      const products = await ProductModel.find({ Category: category });
+  
+      if (products.length === 0) {
+        return res.status(404).json({ message: `No products found in the category: ${category}.` });
+      }
+  
+      res.json(products);
+    } catch (err) {
+      console.error('Error getting products by category:', err);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  
 
 
 // This will register the user in mongo DB with numerous condition
@@ -225,6 +243,7 @@ router.delete('/remove-from-cart/:userId/:cartItemId', async (req, res) => {
     if (!cartItem) {
       return res.status(404).json({ error: 'Cart item not found.' });
     }
+    const product = await ProductModel.findById(cartItem.productId);
 
     // Check if the new quantity is greater than 1
     if (newQuantity > 1) {
@@ -243,7 +262,17 @@ router.delete('/remove-from-cart/:userId/:cartItemId', async (req, res) => {
     cartItem.quantity = Math.max(0, cartItem.quantity);
 
     // Update the totalAmount based on the new quantity
-    cartItem.totalAmount = cartItem.quantity * itemPrice;
+    const itemPrice = parseFloat(product.Price.replace('$', ''));
+    if (!isNaN(itemPrice)) {
+      cartItem.totalAmount = cartItem.quantity * itemPrice;
+    } else {
+      // Handle the case where itemPrice is not a valid number
+      console.error('Error: itemPrice is not a valid number');
+      console.log('Quantity:', cartItem.quantity);
+      console.log('Item Price:',  product.Price.replace('$', ''));
+    }
+    
+   
     // Save the updated cart item
     await cartItem.save();
 
