@@ -29,7 +29,7 @@ router.post('/create-checkout-session', async (req, res) => {
       //this where payment success is redirectd.
       
       success_url: `${process.env.CLIENT_URL}/namaste/checkout-success`,
-      cancel_url: `${process.env.CLIENT_URL}/cart`,
+      cancel_url: `${process.env.CLIENT_URL}/namaste/cart`,
     });
   
     res.send({url: session.url});
