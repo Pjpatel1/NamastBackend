@@ -6,7 +6,7 @@ const cors = require ('cors')
 const ProductModel = require('./Products')
 const Usermodel = require('./User');
 const app = express();
-
+ const stripe = require("./PaymentRoutes/Stripe")
 const router = express.Router();
 const crypto = require('crypto');
 const Cart = require('./Cart');
@@ -29,7 +29,8 @@ const upload = multer({
 app.use(express.static(path.join(__dirname+"/public")))
 app.use(cors())
 app.use(express.json())
-app.use('/cart', router);
+app.use('/cart', router); 
+app.use("/api/stripe",stripe)
 // mongoose.connect("mongodb+srv://Namaste:ram123@clusternamaste.iplr4cq.mongodb.net/")
 const url = "mongodb+srv://Ram:ram12345678@cluster0.fh8ns3a.mongodb.net/";
 mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -139,7 +140,7 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
           message:"Sign in Successfull",
           FirstName:user.FirstName,
           userId:user._id,
-
+          Email:Email,
         });
         
       }
