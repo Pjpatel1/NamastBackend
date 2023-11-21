@@ -284,6 +284,19 @@ router.delete('/remove-from-cart/:userId/:cartItemId', async (req, res) => {
   }
 });
 
+//Here I am deleting whole cart after successfull checkout
+router.delete('/remove-checked-out/:userId',async (req,res) =>{
+  try{
+    const userId = req.params.userId;
+    await CartItems.deleteMany({userId});
+    res.status(200).json({ success: true, message:"All cart items removed from the user."});
+  }
+  catch(error)
+  {
+    console.error('error in /cart/remove-checked-out/:userId:', error);
+    res.status(500).json({success:false, message:'Internal server error.'});
+  }
+});
 
 // Route to handle product creation
 app.post('/add/product', upload.fields([
