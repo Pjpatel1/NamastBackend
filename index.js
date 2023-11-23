@@ -288,7 +288,7 @@ router.delete('/remove-from-cart/:userId/:cartItemId', async (req, res) => {
 router.delete('/remove-checked-out/:userId',async (req,res) =>{
   try{
     const userId = req.params.userId;
-    await CartItems.deleteMany({userId});
+    await Cart.deleteMany({userId});
     res.status(200).json({ success: true, message:"All cart items removed from the user."});
   }
   catch(error)
