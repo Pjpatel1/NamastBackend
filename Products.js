@@ -17,7 +17,7 @@ const productSchema = new mongoose.Schema({
     },
     Description: {
       type: String,
-      required: true
+      required: false
     },
     Quantity: {
       type: String,
@@ -66,11 +66,11 @@ const productSchema = new mongoose.Schema({
       },
       startDate:{
         type: Date,
-        required:true,
+        required:false,
       },
       endDate:{
         type: Date,
-        required:true,
+        required:false,
       }
     }
   });
