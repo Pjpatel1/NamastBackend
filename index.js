@@ -393,7 +393,7 @@ app.post('/add/product', upload.fields([
       Tags:Tag,
       offer: {
         percentageOffer: req.body.percentageOffer,
-        isActive: OfferStartDate && !isOfferEndDatePast && DiscountPercentage > 0,
+        isActive: OfferStartDate && !isOfferEndDatePast && DiscountPercentage > 0 ? true : false,
         discountPercentage: DiscountPercentage,
         startDate: OfferStartDate,
         endDate: OfferEndDate,
