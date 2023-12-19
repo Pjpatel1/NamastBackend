@@ -11,6 +11,10 @@ const productSchema = new mongoose.Schema({
       type: String,
       required: true
     },
+    DiscountedPrice:{
+      type: String,
+      required: false
+    },
     Description: {
       type: String,
       required: true
@@ -32,14 +36,42 @@ const productSchema = new mongoose.Schema({
       required: true
     },
     ProductImage2: {
-      type: String
+      type: String,
+      required: false
     },
     ProductImage3: {
-      type: String
+      type: String,
+      required: false
     },
     Brand: {
       type: String,
       required: true
+    },
+    Tags: {
+      type: [String], // Array of strings to store multiple tags
+      default: [],
+    },
+    offer:{
+      percentageOffer:{
+        type:Boolean,
+        default:false,
+      },
+      isActive:{
+        type:Boolean,
+        default:false,
+      },
+      discountPercentage:{
+        type:Number,
+        default:0,
+      },
+      startDate:{
+        type: Date,
+        required:true,
+      },
+      endDate:{
+        type: Date,
+        required:true,
+      }
     }
   });
   const ProductModel = mongoose.model("supermarket_products", productSchema);

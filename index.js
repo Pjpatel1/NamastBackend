@@ -66,6 +66,19 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
       res.status(500).json({ error: err.message });
     }
   });
+// pathe to retriv product catogoru all unique
+app.get('/categories', async (req, res) => {
+  try {
+    const categories = await ProductModel.distinct('Category');
+    res.json(categories);
+  } 
+  catch (error) 
+  {
+    console.error('Error fetching categories:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
   //This code will send categorised products.
   app.get('/getProductsByCategory/:category', async (req, res) => {
     const category = req.params.category;
@@ -76,14 +89,31 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
       if (products.length === 0) {
         return res.status(404).json({ message: `No products found in the category: ${category}.` });
       }
-  
+
       res.json(products);
     } catch (err) {
       console.error('Error getting products by category:', err);
       res.status(500).json({ error: 'Internal server error' });
     }
   });
-  
+//Here I want to get product by offer.
+app.get('/products/active-offers', async (req, res) => {
+  try {
+    // Query for products with an active offer
+    const productsWithOffers = await ProductModel.find({
+      'offer.isActive': true,
+      'offer.startDate': { $lte: new Date() }, // Check if the current date is after or equal to the start date
+      'offer.endDate': { $gte: new Date() }, // Check if the current date is before or equal to the end date
+    });
+
+    res.json(productsWithOffers);
+  } catch (error) {
+    console.error('Error fetching products with active offers:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
 
 
 // This will register the user in mongo DB with numerous condition
@@ -136,13 +166,11 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
       {
         
         res.json({
-          
           message:"Sign in Successfull",
           FirstName:user.FirstName,
           userId:user._id,
           Email:Email,
         });
-        
       }
     }
     catch(error)
@@ -162,17 +190,25 @@ router.post('/add-to-cart', async(req,res)=>{
       const existingCartItem = await Cart.findOne({ userId, productId });
       if (existingCartItem) {
         const product = await ProductModel.findById(productId);
+        console.log(product);
         if (product) {
           itemPrice = parseFloat(product.Price.replace('$', ''));
-  
+          DiscountedPrice = parseFloat(product.DiscountedPrice.replace('$', ''));
+          console.log(DiscountedPrice);
           // Convert quantity to a number and update the quantity
           const newQuantity = parseInt(quantity);
           existingCartItem.quantity += newQuantity;
   
           // Calculate the new total amount
+          if(product.offer.isActive === true)
+          {
+            const totalAmount = existingCartItem.quantity * DiscountedPrice;
+            existingCartItem.totalAmount = totalAmount;
+          }
+          else{
           const totalAmount = existingCartItem.quantity * itemPrice;
           existingCartItem.totalAmount = totalAmount;
-  
+        }
           await existingCartItem.save();
           res.json({ message: 'Item quantity updated in the cart' });
         } else {
@@ -236,11 +272,10 @@ router.delete('/remove-from-cart/:userId/:cartItemId', async (req, res) => {
   const userId = req.params.userId;
   const cartItemId = req.params.cartItemId;
   const newQuantity = req.body.newQuantity;
-  
+
   try {
     // Find the cart item by userId and cartItemId
     const cartItem = await Cart.findOne({ userId, _id: cartItemId });
-
     if (!cartItem) {
       return res.status(404).json({ error: 'Cart item not found.' });
     }
@@ -261,19 +296,29 @@ router.delete('/remove-from-cart/:userId/:cartItemId', async (req, res) => {
 
     // Ensure the quantity is not negative
     cartItem.quantity = Math.max(0, cartItem.quantity);
-
+    
     // Update the totalAmount based on the new quantity
     const itemPrice = parseFloat(product.Price.replace('$', ''));
-    if (!isNaN(itemPrice)) {
-      cartItem.totalAmount = cartItem.quantity * itemPrice;
-    } else {
+    if (!isNaN(itemPrice)) 
+    {
+      if (product.offer.isActive === true) {
+        // Assuming DiscountedPrice is available in your product data
+        console.log(product);
+        const discountedPrice = parseFloat(product.DiscountedPrice.replace('$', ''));
+        const totalAmount = cartItem.quantity * discountedPrice;
+        cartItem.totalAmount = totalAmount;
+      } else {
+        const totalAmount = cartItem.quantity * itemPrice;
+        cartItem.totalAmount = totalAmount;
+      }
+    } 
+    else 
+    {
       // Handle the case where itemPrice is not a valid number
       console.error('Error: itemPrice is not a valid number');
       console.log('Quantity:', cartItem.quantity);
       console.log('Item Price:',  product.Price.replace('$', ''));
     }
-    
-   
     // Save the updated cart item
     await cartItem.save();
 
@@ -303,11 +348,13 @@ app.post('/add/product', upload.fields([
   { name: 'ProductImage1', maxCount: 1 },
   { name: 'ProductImage2', maxCount: 1 },
   { name: 'ProductImage3', maxCount: 1 },
+  { name: 'Tag' },
 ]), async (req, res) => {
   try {
     const {
       Name,
       Price,
+      DiscountedPrice,
       Description,
       Quantity,
       Category,
@@ -319,11 +366,22 @@ app.post('/add/product', upload.fields([
       ProductImage1Url,
       ProductImage2Url,
       ProductImage3Url,
+      Tag,
+      percentageOffer,
+      OfferStartDate,
+      OfferEndDate,
+      DiscountPercentage,
     } = req.body;
 
+    console.log(req.body.Tag);
+    console.log(typeof(req.body.DiscountedPrice));
+    const currentDate =  new Date();
+    const isOfferEndDatePast =  new Date(OfferEndDate) < currentDate;
+    
     const productData = {
       Name,
       Price,
+      DiscountedPrice:req.body.DiscountedPrice,
       Description,
       Quantity,
       Category,
@@ -332,8 +390,15 @@ app.post('/add/product', upload.fields([
       ProductImage1: req.files['ProductImage1'] ? req.files['ProductImage1'][0].buffer.toString('base64') : ProductImage1Url,
       ProductImage2: req.files['ProductImage2'] ? req.files['ProductImage2'][0].buffer.toString('base64') : ProductImage2Url,
       ProductImage3: req.files['ProductImage3'] ? req.files['ProductImage3'][0].buffer.toString('base64') : ProductImage3Url,
+      Tags:Tag,
+      offer: {
+        percentageOffer: req.body.percentageOffer,
+        isActive: OfferStartDate && !isOfferEndDatePast && DiscountPercentage > 0,
+        discountPercentage: DiscountPercentage,
+        startDate: OfferStartDate,
+        endDate: OfferEndDate,
+      },
     };
-
     const newProduct = await ProductModel.create(productData);
     res.status(201).json(newProduct);
   } catch (error) {
@@ -341,8 +406,7 @@ app.post('/add/product', upload.fields([
     res.status(500).send('Internal Server Error');
   }
 });
-
-//REmove product from the Database
+//Remove product from the Database
 app.delete('/remove/product/:id',async(req,res)=>{
   try{
     const productId = req.params.id;
@@ -377,8 +441,7 @@ app.get('/register',async(req,res)=>{
   {
     console.log("remove from cart is working");
   })
-
-  const port = process.env.PORT || 3001; // Use the provided port or a default (e.g., 3001)
+const port = process.env.PORT || 3001; // Use the provided port or a default (e.g., 3001)
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
