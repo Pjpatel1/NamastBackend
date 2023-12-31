@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const mongoose  = require ('mongoose')
+const mongoose  = require ('mongoose');
 const { v4: uuidv4 } = require('uuid');
 const cors = require ('cors')
 const ProductModel = require('./Products')
@@ -112,6 +112,7 @@ app.get('/products/active-offers', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 
 
@@ -406,6 +407,26 @@ app.post('/add/product', upload.fields([
     res.status(500).send('Internal Server Error');
   }
 });
+
+//Here I am Editing the Product
+app.put('/editProduct/:productId', async (req, res) => {
+  try {
+    const productId = req.params.productId;
+    const updatedProduct = req.body;
+
+    const result = await ProductModel.findByIdAndUpdate(productId, updatedProduct, { new: true });
+
+    if (!result) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
 //Remove product from the Database
 app.delete('/remove/product/:id',async(req,res)=>{
   try{
@@ -440,6 +461,10 @@ app.get('/register',async(req,res)=>{
   app.get('/remove-from-cart',async(req,res)=>
   {
     console.log("remove from cart is working");
+  })
+  app.get('/editProduct',async(req,res)=>
+  {
+    console.log("Edit Product accessed");
   })
 const port = process.env.PORT || 3001; // Use the provided port or a default (e.g., 3001)
 app.listen(port, () => {

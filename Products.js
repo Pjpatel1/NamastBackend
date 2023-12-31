@@ -15,6 +15,9 @@ const productSchema = new mongoose.Schema({
       type: String,
       required: false
     },
+    Taxable:{
+      type:Boolean,
+    },
     Description: {
       type: String,
       required: false
@@ -26,7 +29,7 @@ const productSchema = new mongoose.Schema({
     Category: {
       type: String,
       required: true
-    },
+     },  
     Stock: {
       type: Number,
       required: true
