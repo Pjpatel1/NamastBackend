@@ -66,6 +66,21 @@ mongoose.connect(url, { useNewUrlParser: true, useUnifiedTopology: true })
       res.status(500).json({ error: err.message });
     }
   });
+  //Get the product by ID
+  app.get('/getProduct/:productId', async (req, res) => {
+    try {
+      const productId = req.params.productId;
+      const product = await ProductModel.findById(productId);
+  
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found.' });
+      }
+  
+      res.json(product);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
 // pathe to retriv product catogoru all unique
 app.get('/categories', async (req, res) => {
   try {
@@ -210,6 +225,8 @@ router.post('/add-to-cart', async(req,res)=>{
           const totalAmount = existingCartItem.quantity * itemPrice;
           existingCartItem.totalAmount = totalAmount;
         }
+       
+
           await existingCartItem.save();
           res.json({ message: 'Item quantity updated in the cart' });
         } else {
@@ -356,6 +373,7 @@ app.post('/add/product', upload.fields([
       Name,
       Price,
       DiscountedPrice,
+      Taxable,
       Description,
       Quantity,
       Category,
@@ -373,6 +391,7 @@ app.post('/add/product', upload.fields([
       OfferEndDate,
       DiscountPercentage,
     } = req.body;
+    const TaxableValue = Taxable.toLowerCase() === 'true';
 
     console.log(req.body.Tag);
     console.log(typeof(req.body.DiscountedPrice));
@@ -383,6 +402,7 @@ app.post('/add/product', upload.fields([
       Name,
       Price,
       DiscountedPrice:req.body.DiscountedPrice,
+      Taxable: TaxableValue,
       Description,
       Quantity,
       Category,

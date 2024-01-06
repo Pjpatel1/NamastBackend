@@ -17,6 +17,7 @@ const productSchema = new mongoose.Schema({
     },
     Taxable:{
       type:Boolean,
+      required: true
     },
     Description: {
       type: String,
